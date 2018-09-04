@@ -23,20 +23,22 @@
 		  
 main (int argc, char *argv[])
 {
-  int i;
   int err;
-  char *buffer;
-
   
 
-
-  //Preparing sound capture device (physical)========
+  //[Variables] preparing sound capture device (physical)========
+  char *buffer;
   snd_pcm_t *capture_handle;
   snd_pcm_hw_params_t *c_hw_params;
 	snd_pcm_t *playback_handle;
 	snd_pcm_hw_params_t *p_hw_params;
 	snd_pcm_format_t PCM_FORMAT = SND_PCM_FORMAT_S16_LE;
   unsigned int SAMPLE_RATE = 48000;
+
+  //[Variables] for signal processing
+  int i;
+  short *frm;
+
 
 #if REC_LOCAL
   FILE *sig_FOut;
@@ -182,6 +184,7 @@ main (int argc, char *argv[])
 #endif
 
   buffer = malloc(BUFF_LEN * (snd_pcm_format_width(PCM_FORMAT) / 8) * NUM_CH);
+  frm = (short*)buffer;
   fprintf(stdout, "buffer allocated\n");
 
   while (1) 
@@ -192,6 +195,12 @@ main (int argc, char *argv[])
                err, snd_strerror (err));
       exit (1);
     }
+
+//------Audio Processing Begins!
+    for (i=0;i<BUFF_LEN * NUM_CH / 2;i++)
+      frm[2*i] >>= 4; //scale down only left channel
+
+//------------------------------
 #if REC_LOCAL==0
 		if ((err = snd_pcm_writei (playback_handle, buffer, BUFF_LEN)) != BUFF_LEN)
     {
